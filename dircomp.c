@@ -28,12 +28,12 @@ void print_files_in_directory(char*, struct arguments);
 
 int main(int argc, char* argv[]){
   	struct arguments arguments = get_arguments(argc, argv);
-  	
+
   	if(arguments.h == true)
   		return 0;
-	
+
 	print_files_in_directory("/home/user", arguments);
-  	
+
   	return 0;
 }
 
@@ -83,21 +83,21 @@ void print_files_in_directory(char* directory, struct arguments arguments){
   	d = opendir(directory);
   	if (d) {
     	while ((dir = readdir(d)) != NULL) {
-    
+
     		// is file
     		if (dir -> d_type == DT_REG)
   			{
   				if(arguments.v == true)
      				printf("Analyzing file: %s\n", dir -> d_name);
   			}
-  	
+
   			// is directory
-  			if (dir->d_type == DT_DIR)
+  			if (dir -> d_type == DT_DIR)
   			{
   				if(arguments.r == true)
   					print_files_in_directory(dir -> d_name, arguments); // todo, pass the pointer to reduce memory usage
   			}
-  		
+
     	}
 	closedir(d);
   }
