@@ -24,15 +24,19 @@ struct arguments{
 
 struct arguments get_arguments(int, char**);
 void print_help(void);
-void print_files_in_directory(char*, struct arguments);
+void print_files_in_directory(struct arguments);
 
 int main(int argc, char* argv[]){
     struct arguments arguments = get_arguments(argc, argv);
 
-    if(arguments.h == true)
+    if(arguments.h == true){
+        print_help();
         return 0;
+    }
 
-    print_files_in_directory("/home/user", arguments);
+    arguments.directory1 = "/home/user";
+    arguments.directory2 = "/home/user";
+    print_files_in_directory(arguments);
 
     return 0;
 }
@@ -56,7 +60,6 @@ struct arguments get_arguments(int argc, char** argv){
                 break;
             case 'h':
                 provided_arguments.h = true;
-                print_help();
                 break;
         }
     }
@@ -76,11 +79,11 @@ void print_help(void){
 *	References:
 *	https://www.gnu.org/software/libc/manual/html_node/Directory-Entries.html
 */
-void print_files_in_directory(char* directory, struct arguments arguments){
-    printf("\nAnalyzing directory %s\n", directory);
+void print_files_in_directory(struct arguments arguments){ // testing only
+    printf("\nAnalyzing directory %s\n", arguments.directory1);
     DIR *d;
     struct dirent *dir;
-    d = opendir(directory);
+    d = opendir(arguments.directory1);
     if (d) {
         while ((dir = readdir(d)) != NULL) {
 
