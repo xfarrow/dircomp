@@ -36,6 +36,10 @@ int main(int argc, char *argv[])
 struct arguments get_arguments(int argc, char **argv)
 {
     struct arguments provided_arguments = {"", "", false, false, false};
+    if(argc == 1){
+        provided_arguments.h = true;
+        return provided_arguments;
+    }
     char option;
     while ((option = getopt(argc, argv, "rnsvh")) != -1)
     {
@@ -253,8 +257,8 @@ unsigned char *get_sha1_file(char *filename)
 
 void print_help(void)
 {
-    printf("Usage: dircomp directory1 directory2 [-r] [-v] [-h]\n\n");
+    printf("usage: dircomp directory1 directory2 [-r] [-v] [-h]\n");
     printf("  -r \t\t Recursive\n");
     printf("  -v \t\t Verbose\n");
-    printf("  -h \t\t Print this help and quit\n\n");
+    printf("  -h \t\t Print this help and quit\n");
 }

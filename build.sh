@@ -1,2 +1,2 @@
 #! /bin/bash
-gcc dircomp.c -lssl -lcrypto -o dircomp
+gcc -o3 dircomp.c -lssl -lcrypto -o dircomp
