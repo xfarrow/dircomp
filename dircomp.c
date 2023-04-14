@@ -13,6 +13,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #include <dirent.h>
 #include <openssl/sha.h>
 #include <string.h>
+#include <limits.h>
 
 struct arguments{
     char* directory1;
@@ -26,7 +27,8 @@ struct arguments{
 
 struct arguments get_arguments(int, char**);
 void print_help(void);
-void print_files_in_directory(char*, char*, struct arguments*);
+void analyze_directories(char*, char*, struct arguments*);
+unsigned char* get_sha1_file(char *);
 
 int main(int argc, char* argv[]){
     struct arguments arguments = get_arguments(argc, argv);
@@ -36,7 +38,7 @@ int main(int argc, char* argv[]){
         return 0;
     }
 
-    print_files_in_directory(arguments.directory1, "", &arguments); // pass pointer to reduce memory usage
+    analyze_directories(arguments.directory1, "", &arguments);
 
     return 0;
 }
@@ -65,11 +67,11 @@ struct arguments get_arguments(int argc, char** argv){
     }
 
     // Get directories
-    if( (argc - optind) < 2){
+    if( (argc - optind) < 2 ){
          fprintf (stderr, "Not enough directories.\n");
          exit(-1);
     }
-    else if( (argc - optind) > 2){
+    else if( (argc - optind) > 2 ){
          fprintf (stderr, "Too many directories.\n");
          exit(-1);
     }
@@ -85,7 +87,7 @@ struct arguments get_arguments(int argc, char** argv){
 *	References:
 *	https://www.gnu.org/software/libc/manual/html_node/Directory-Entries.html
 */
-void print_files_in_directory(char* directory1, char* directory2, struct arguments* arguments){ // testing only
+void analyze_directories(char* directory1, char* directory2, struct arguments* arguments){ // testing only
     printf("\nAnalyzing directory %s\n", directory1);
     DIR *d;
     struct dirent *dir;
@@ -104,7 +106,7 @@ void print_files_in_directory(char* directory1, char* directory2, struct argumen
             if (dir -> d_type == DT_DIR)
             {
                 if(arguments -> r == true)
-                    print_files_in_directory(dir -> d_name, "", arguments);
+                    analyze_directories(dir -> d_name, "", arguments);
             }
 
         }
@@ -112,15 +114,37 @@ void print_files_in_directory(char* directory1, char* directory2, struct argumen
     }
 }
 
-void sha1(char* string){
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(string, strlen(string), hash);
+/*
+*   References: 
+*   https://www.openssl.org/docs/man1.1.1/man3/SHA512_Init.html
+*/
+unsigned char* get_sha1_file(char *filename){
+    FILE* f = fopen(filename,"rb");
+    if(f == NULL){
+        fprintf (stderr, "Couldn't open %s\n", filename);
+        exit(-1);
+    }
 
-    int i;
-    for (i = 0; i < SHA_DIGEST_LENGTH; ++i)
-	    printf("%02x", hash[i]);
+    // For a matter of efficiency, we do not read
+    // the whole file at once. It'd be heavy on RAM.
+    // Instead, we read BYTES_TO_READ_AT_ONCE at time
 
-    putchar('\n');
+    #define BYTES_TO_READ_AT_ONCE 1048576 // 1MiB
+    unsigned int bytes; // how many bytes we have actually read from fread
+    #if BYTES_TO_READ_AT_ONCE > UINT_MAX
+        #error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
+    #endif
+    
+    SHA_CTX context;
+    unsigned char* hash = malloc(SHA_DIGEST_LENGTH * sizeof(unsigned char)); // result will be here
+    unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
+    SHA1_Init(&context);
+    while((bytes = fread(databuffer, 1, BYTES_TO_READ_AT_ONCE, f)) != 0){
+        SHA1_Update(&context, databuffer, bytes);
+    }
+    SHA1_Final(hash, &context);
+    fclose(f);
+    return hash;
 }
 
 void print_help(void){
