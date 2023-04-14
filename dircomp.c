@@ -257,7 +257,6 @@ void print_help(void)
 {
     printf("Usage: dircomp directory1 directory2 [-r] [-v] [-h]\n\n");
     printf("  -r \t\t Recursive\n");
-    ;
     printf("  -v \t\t Verbose\n");
     printf("  -h \t\t Print this help and quit\n\n");
 }
