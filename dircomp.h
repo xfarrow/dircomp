@@ -17,21 +17,21 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #include <openssl/sha.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 struct arguments{
     char* directory1;
     char* directory2;
     bool r; // recursive
-    bool n; // compare names only
-    bool s; // compare hashes only
-    bool v; // verbose (default, at the moment)
+    bool v; // verbose
     bool h; // help
 };
 
 struct arguments get_arguments(int, char**);
 
 // Reference: https://www.gnu.org/software/libc/manual/html_node/Directory-Entries.html
-void analyze_directories(char*, char*, struct arguments*);
+bool analyze_directories(struct arguments*);
 
 // Reference: https://www.openssl.org/docs/man1.1.1/man3/SHA512_Init.html
 unsigned char* get_sha1_file(char *);

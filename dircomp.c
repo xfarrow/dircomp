@@ -14,23 +14,22 @@ int main(int argc, char* argv[]){
         print_help();
         return 0;
     }
-    analyze_directories(arguments.directory1, "", &arguments);
+    if(analyze_directories(&arguments)){
+        printf("Directories are equal\n");
+    }
+    else{
+        printf("Directories are not equal\n");
+    }
     return 0;
 }
 
 struct arguments get_arguments(int argc, char** argv){
-    struct arguments provided_arguments = {"", "", false, false, false, true, false};
+    struct arguments provided_arguments = {"", "", false, false, false};
     char option;
     while((option = getopt(argc, argv, "rnsvh")) != -1){
         switch(option){
             case 'r':
                 provided_arguments.r = true;
-                break;
-            case 'n':
-                provided_arguments.n = true;
-                break;
-            case 's':
-                provided_arguments.s = true;
                 break;
             case 'v':
                 provided_arguments.v = true;
@@ -57,31 +56,125 @@ struct arguments get_arguments(int argc, char** argv){
     return provided_arguments;
 }
 
-void analyze_directories(char* directory1, char* directory2, struct arguments* arguments){
-    printf("\nAnalyzing directory %s\n", directory1);
-    DIR *d;
-    struct dirent *dir;
-    d = opendir(directory1);
-    if (d) {
-        while ((dir = readdir(d)) != NULL) {
+bool analyze_directories(struct arguments* arguments){
+    if(arguments -> v == true)
+        printf("\nAnalyzing directories %s %s\n", arguments -> directory1, arguments -> directory2);
 
-            // is file
-            if (dir -> d_type == DT_REG)
+    bool is_directory_equal = true;
+    char fullpath1[512];
+    char fullpath2[512];
+    struct dirent* element;
+    DIR *directory;
+
+    // Open directory 1
+    directory = opendir(arguments -> directory1);
+    if (directory) {
+        while ((element = readdir(directory)) != NULL) {
+
+            // Is file
+            if (element -> d_type == DT_REG)
             {
-                if(arguments -> v == true)
-                    printf("Analyzing file: %s\n", dir -> d_name);
+                strcpy(fullpath1, arguments -> directory1);
+                strcat(fullpath1, "/");
+                strcat(fullpath1, element -> d_name);
+                strcpy(fullpath2, arguments -> directory2);
+                strcat(fullpath2, "/");
+                strcat(fullpath2, element -> d_name);
+
+                // Check wether it exists in directory2
+                if( access(fullpath2, F_OK ) == -1 )
+                {
+                    is_directory_equal = false;
+                    if(arguments -> v == true)
+                        printf("File %s exists in %s but does not is %s\n", element->d_name 
+                                                                        , arguments->directory1
+                                                                        , arguments->directory2);
+                }
+                // Check if files have the same signature
+                else{
+                    if(strcmp(get_sha1_file(fullpath2), get_sha1_file(fullpath1)) != 0){ // TODO: gotta free the hash!
+                        is_directory_equal = false;
+                        if(arguments -> v == true)
+                            printf("File %s in %s has a different signature in %s\n"  , element->d_name
+                                                                                    , arguments->directory1
+                                                                                    , arguments->directory2);
+                    }
+                }
             }
 
-            // is directory
-            if (dir -> d_type == DT_DIR)
+            // Is directory
+            else if (element -> d_type == DT_DIR)
             {
-                if(arguments -> r == true)
-                    analyze_directories(dir -> d_name, "", arguments);
-            }
+                // Check wether it exists in directory2
+                strcpy(fullpath2, arguments -> directory2);
+                strcat(fullpath2, "/");
+                strcat(fullpath2, element -> d_name);
+                // Allocate heap memory in order to free it before a potential recursive call starts
+                struct stat* dummy_structure = malloc(sizeof(struct stat));
+                if(stat(fullpath2, dummy_structure) == -1){
+                    is_directory_equal = false;
+                    if(arguments -> v == true)
+                        printf("Sub-directory %s exists in %s but does not in %s\n"   , element -> d_name 
+                                                                                    , arguments->directory1
+                                                                                    , arguments->directory2);
+                }
+                free(dummy_structure);
 
+                // Analyze recursively
+                if(arguments -> r == true){
+                    if(strcmp(element -> d_name, ".") == 0 || strcmp(element -> d_name, "..") == 0){
+                        continue;
+                    }
+                    analyze_directories(arguments);
+                }
+            }
         }
-    closedir(d);
+        closedir(directory);
     }
+
+    // Open directory 2
+    directory = opendir(arguments -> directory2);
+    if (directory) 
+    {
+        while ((element = readdir(directory)) != NULL) 
+        {
+            // Is file
+            if (element -> d_type == DT_REG)
+            {
+                // Check wether it exists in directory1
+                strcpy(fullpath1, arguments -> directory1);
+                strcat(fullpath1, "/");
+                strcat(fullpath1, element -> d_name);
+                if( access(fullpath1, F_OK ) == -1 )
+                {
+                    is_directory_equal = false;
+                    if(arguments -> v == true)
+                        printf("File %s exists in %s but does not in %s\n", element->d_name 
+                                                                        , arguments->directory2
+                                                                        , arguments->directory1);
+                }
+            }
+
+            // Is directory
+            else if (element -> d_type == DT_DIR)
+            {
+                // Check wether it exists in directory1
+                strcpy(fullpath1, arguments -> directory1);
+                strcat(fullpath1, "/");
+                strcat(fullpath1, element -> d_name);
+                struct stat dummy_structure; // no need to be malloc-ed, as it'll be automatically free-d as the call ends
+                if(stat(fullpath1, &dummy_structure) == -1){
+                    is_directory_equal = false;
+                    if(arguments -> v == true)
+                        printf("Sub-directory %s exists in %s but does not in %s\n"   , element->d_name 
+                                                                                    , arguments->directory2
+                                                                                    , arguments->directory1);
+                }
+            }
+        }
+        closedir(directory);
+    }
+    return is_directory_equal;
 }
 
 unsigned char* get_sha1_file(char *filename){
@@ -112,10 +205,8 @@ unsigned char* get_sha1_file(char *filename){
 }
 
 void print_help(void){
-    printf("Usage: dircomp directory1 directory2 [-r] [-n] [-s] [-v] [-h]\n\n");
-    printf("  -r \t\t Recursive\n");
-    printf("  -n \t\t Compare file names only\n");
-    printf("  -s \t\t Compare file hashes only\n");
+    printf("Usage: dircomp directory1 directory2 [-r] [-v] [-h]\n\n");
+    printf("  -r \t\t Recursive\n");;
     printf("  -v \t\t Verbose\n");
     printf("  -h \t\t Print this help and quit\n\n");
 }
