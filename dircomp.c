@@ -6,40 +6,15 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdbool.h>
-#include <dirent.h>
-#include <openssl/sha.h>
-#include <string.h>
-#include <limits.h>
-
-struct arguments{
-    char* directory1;
-    char* directory2;
-    bool r; // recursive
-    bool n; // compare names only
-    bool s; // compare hashes only
-    bool v; // verbose (default, at the moment)
-    bool h; // help
-};
-
-struct arguments get_arguments(int, char**);
-void print_help(void);
-void analyze_directories(char*, char*, struct arguments*);
-unsigned char* get_sha1_file(char *);
+# include "dircomp.h"
 
 int main(int argc, char* argv[]){
     struct arguments arguments = get_arguments(argc, argv);
-
     if(arguments.h == true){
         print_help();
         return 0;
     }
-
     analyze_directories(arguments.directory1, "", &arguments);
-
     return 0;
 }
 
@@ -79,15 +54,10 @@ struct arguments get_arguments(int argc, char** argv){
     strcpy(provided_arguments.directory1, argv[optind]);
     provided_arguments.directory2 = malloc( (strlen(argv[optind + 1]) * sizeof(char)) + 1);
     strcpy(provided_arguments.directory2, argv[optind + 1]);
-    
     return provided_arguments;
 }
 
-/*
-*	References:
-*	https://www.gnu.org/software/libc/manual/html_node/Directory-Entries.html
-*/
-void analyze_directories(char* directory1, char* directory2, struct arguments* arguments){ // testing only
+void analyze_directories(char* directory1, char* directory2, struct arguments* arguments){
     printf("\nAnalyzing directory %s\n", directory1);
     DIR *d;
     struct dirent *dir;
@@ -114,10 +84,6 @@ void analyze_directories(char* directory1, char* directory2, struct arguments* a
     }
 }
 
-/*
-*   References: 
-*   https://www.openssl.org/docs/man1.1.1/man3/SHA512_Init.html
-*/
 unsigned char* get_sha1_file(char *filename){
     FILE* f = fopen(filename,"rb");
     if(f == NULL){
@@ -128,13 +94,11 @@ unsigned char* get_sha1_file(char *filename){
     // For a matter of efficiency, we do not read
     // the whole file at once. It'd be heavy on RAM.
     // Instead, we read BYTES_TO_READ_AT_ONCE at time
-
     #define BYTES_TO_READ_AT_ONCE 1048576 // 1MiB
     unsigned int bytes; // how many bytes we have actually read from fread
     #if BYTES_TO_READ_AT_ONCE > UINT_MAX
         #error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
     #endif
-    
     SHA_CTX context;
     unsigned char* hash = malloc(SHA_DIGEST_LENGTH * sizeof(unsigned char)); // result will be here
     unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
