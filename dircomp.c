@@ -61,8 +61,7 @@ bool analyze_directories(struct arguments* arguments){
         printf("\nAnalyzing directories %s %s\n", arguments -> directory1, arguments -> directory2);
 
     bool is_directory_equal = true;
-    char fullpath1[512];
-    char fullpath2[512];
+    char fullpath[512];
     struct dirent* element;
     DIR *directory;
 
@@ -74,31 +73,37 @@ bool analyze_directories(struct arguments* arguments){
             // Is file
             if (element -> d_type == DT_REG)
             {
-                strcpy(fullpath1, arguments -> directory1);
-                strcat(fullpath1, "/");
-                strcat(fullpath1, element -> d_name);
-                strcpy(fullpath2, arguments -> directory2);
-                strcat(fullpath2, "/");
-                strcat(fullpath2, element -> d_name);
-
                 // Check wether it exists in directory2
-                if( access(fullpath2, F_OK ) == -1 )
+                strcpy(fullpath, arguments -> directory2);
+                strcat(fullpath, "/");
+                strcat(fullpath, element -> d_name);
+                if( access(fullpath, F_OK ) == -1 )
                 {
                     is_directory_equal = false;
                     if(arguments -> v == true)
-                        printf("File %s exists in %s but does not is %s\n", element->d_name 
-                                                                        , arguments->directory1
-                                                                        , arguments->directory2);
+                        printf("File %s exists in %s but does not in %s\n"  , element -> d_name 
+                                                                            , arguments -> directory1
+                                                                            , arguments -> directory2);
                 }
                 // Check if files have the same signature
                 else{
-                    if(strcmp(get_sha1_file(fullpath2), get_sha1_file(fullpath1)) != 0){ // TODO: gotta free the hash!
+                    strcpy(fullpath, arguments -> directory1);
+                    strcat(fullpath, "/");
+                    strcat(fullpath, element -> d_name);
+                    unsigned char* hash_file_1 = get_sha1_file(fullpath);
+                    strcpy(fullpath, arguments -> directory2);
+                    strcat(fullpath, "/");
+                    strcat(fullpath, element -> d_name);
+                    unsigned char* hash_file_2 = get_sha1_file(fullpath);
+                    if(strcmp(hash_file_1, hash_file_2) != 0){
                         is_directory_equal = false;
                         if(arguments -> v == true)
                             printf("File %s in %s has a different signature in %s\n"  , element->d_name
                                                                                     , arguments->directory1
                                                                                     , arguments->directory2);
                     }
+                    free(hash_file_1);
+                    free(hash_file_2);
                 }
             }
 
@@ -106,12 +111,12 @@ bool analyze_directories(struct arguments* arguments){
             else if (element -> d_type == DT_DIR)
             {
                 // Check wether it exists in directory2
-                strcpy(fullpath2, arguments -> directory2);
-                strcat(fullpath2, "/");
-                strcat(fullpath2, element -> d_name);
+                strcpy(fullpath, arguments -> directory2);
+                strcat(fullpath, "/");
+                strcat(fullpath, element -> d_name);
                 // Allocate heap memory in order to free it before a potential recursive call starts
                 struct stat* dummy_structure = malloc(sizeof(struct stat));
-                if(stat(fullpath2, dummy_structure) == -1){
+                if(stat(fullpath, dummy_structure) == -1){
                     is_directory_equal = false;
                     if(arguments -> v == true)
                         printf("Sub-directory %s exists in %s but does not in %s\n"   , element -> d_name 
@@ -142,16 +147,16 @@ bool analyze_directories(struct arguments* arguments){
             if (element -> d_type == DT_REG)
             {
                 // Check wether it exists in directory1
-                strcpy(fullpath1, arguments -> directory1);
-                strcat(fullpath1, "/");
-                strcat(fullpath1, element -> d_name);
-                if( access(fullpath1, F_OK ) == -1 )
+                strcpy(fullpath, arguments -> directory1);
+                strcat(fullpath, "/");
+                strcat(fullpath, element -> d_name);
+                if( access(fullpath, F_OK ) == -1 )
                 {
                     is_directory_equal = false;
                     if(arguments -> v == true)
-                        printf("File %s exists in %s but does not in %s\n", element->d_name 
-                                                                        , arguments->directory2
-                                                                        , arguments->directory1);
+                        printf("File %s exists in %s but does not in %s\n", element -> d_name 
+                                                                        , arguments -> directory2
+                                                                        , arguments -> directory1);
                 }
             }
 
@@ -159,11 +164,11 @@ bool analyze_directories(struct arguments* arguments){
             else if (element -> d_type == DT_DIR)
             {
                 // Check wether it exists in directory1
-                strcpy(fullpath1, arguments -> directory1);
-                strcat(fullpath1, "/");
-                strcat(fullpath1, element -> d_name);
+                strcpy(fullpath, arguments -> directory1);
+                strcat(fullpath, "/");
+                strcat(fullpath, element -> d_name);
                 struct stat dummy_structure; // no need to be malloc-ed, as it'll be automatically free-d as the call ends
-                if(stat(fullpath1, &dummy_structure) == -1){
+                if(stat(fullpath, &dummy_structure) == -1){
                     is_directory_equal = false;
                     if(arguments -> v == true)
                         printf("Sub-directory %s exists in %s but does not in %s\n"   , element->d_name 
