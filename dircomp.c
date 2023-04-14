@@ -84,7 +84,6 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
     struct dirent *element;
     DIR *directory;
 
-    // Open directory 1
     directory = opendir(directory_to_analyze_1);
     if (directory)
     {
@@ -175,7 +174,6 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
         closedir(directory);
     }
 
-    // Open directory 2
     directory = opendir(directory_to_analyze_2);
     if (directory)
     {
