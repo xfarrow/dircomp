@@ -14,7 +14,6 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #include <unistd.h>
 #include <stdbool.h>
 #include <dirent.h>
-#include <openssl/sha.h>
 #include <string.h>
 #include <limits.h>
 #include <sys/types.h>
@@ -33,8 +32,7 @@ struct arguments get_arguments(int, char**);
 // Reference: https://www.gnu.org/software/libc/manual/html_node/Directory-Entries.html
 bool analyze_directories(char*, char*, struct arguments*);
 
-// Reference: https://www.openssl.org/docs/man1.1.1/man3/SHA512_Init.html
-unsigned char* get_sha1_file(char *);
+int are_files_equal(char*, char*);
 
 void print_help(void);
 

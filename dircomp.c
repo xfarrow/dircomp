@@ -81,8 +81,9 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
         printf("\nAnalyzing directories %s %s\n", directory_to_analyze_1, directory_to_analyze_2);
 
     bool is_directory_equal = true;
-    int stat_result;
+    int stat_result, file_equality_result;
     char fullpath_file_helper[512];
+    char fullpath_file_helper2[512];
     char* subdirectory1;
     char* subdirectory2;
     struct dirent *element;
@@ -109,27 +110,32 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                                                                             , directory_to_analyze_2);
                 }
 
-                // Check if files have the same signature
+                // Check if the files are the same
                 else
                 {
                     strcpy(fullpath_file_helper, directory_to_analyze_1);
                     strcat(fullpath_file_helper, "/");
                     strcat(fullpath_file_helper, element->d_name);
-                    unsigned char *hash_file_1 = get_sha1_file(fullpath_file_helper);
-                    strcpy(fullpath_file_helper, directory_to_analyze_2);
-                    strcat(fullpath_file_helper, "/");
-                    strcat(fullpath_file_helper, element->d_name);
-                    unsigned char *hash_file_2 = get_sha1_file(fullpath_file_helper);
-                    if (strcmp(hash_file_1, hash_file_2) != 0)
+                    strcpy(fullpath_file_helper2, directory_to_analyze_2);
+                    strcat(fullpath_file_helper2, "/");
+                    strcat(fullpath_file_helper2, element->d_name);
+                    file_equality_result = are_files_equal(fullpath_file_helper, fullpath_file_helper2);
+                    if (file_equality_result != 1)
                     {
                         is_directory_equal = false;
-                        if (arguments->v == true)
-                            printf("File %s in %s has a different signature in %s\n", element->d_name
-                                                                                    , directory_to_analyze_1
-                                                                                    , directory_to_analyze_2);
+                        if(file_equality_result == 0 && arguments->v == true)
+                        {
+                            printf("File %s in %s is different in %s\n" , element->d_name
+                                                                        , directory_to_analyze_1
+                                                                        , directory_to_analyze_2);
+                        }
+                        else if(file_equality_result == -1)
+                        {
+                            printf("Error while comparing file %s in the directories %s, %s", element->d_name
+                                                                                            , directory_to_analyze_1
+                                                                                            , directory_to_analyze_2);
+                        }
                     }
-                    free(hash_file_1);
-                    free(hash_file_2);
                 }
             }
 
@@ -148,7 +154,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 struct stat *dummy_structure = malloc(sizeof(struct stat));
                 stat_result = stat(fullpath_file_helper, dummy_structure);
                 free(dummy_structure);
-                if (stat_result == -1)
+                if (stat_result == -1) // directory does not exist
                 {
                     is_directory_equal = false;
                     if (arguments->v == true)
@@ -225,34 +231,37 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
     return is_directory_equal;
 }
 
-unsigned char *get_sha1_file(char *filename)
-{
-    FILE *f = fopen(filename, "rb");
-    if (f == NULL)
-    {
-        fprintf(stderr, "Couldn't open %s\n", filename);
-        exit(-1);
-    }
+int are_files_equal(char* filename1, char* filename2){
+    struct stat stat1, stat2;
 
-    // For a matter of efficiency, we do not read
-    // the whole file at once. It'd be heavy on RAM.
-    // Instead, we read BYTES_TO_READ_AT_ONCE at time
-#define BYTES_TO_READ_AT_ONCE 512000    // 500KiB
-    unsigned int bytes;                 // how many bytes we have actually read from fread
-#if BYTES_TO_READ_AT_ONCE > UINT_MAX
-#error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
-#endif
-    SHA_CTX context;
-    unsigned char *hash = malloc(SHA_DIGEST_LENGTH * sizeof(unsigned char)); // result will be here
-    unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
-    SHA1_Init(&context);
-    while ((bytes = fread(databuffer, 1, BYTES_TO_READ_AT_ONCE, f)) != 0)
+    if ( stat(filename1, &stat1) != 0 || stat(filename2, &stat2) != 0)
+        return -1; // error opening files
+
+    if(stat1.st_size != stat2.st_size)
+        return 0; // files are not the same as they have a different dimension
+    
+    FILE *file1 = fopen(filename1, "rb");
+    FILE *file2 = fopen(filename2, "rb");
+    if (file1 == NULL || file2 == NULL)
     {
-        SHA1_Update(&context, databuffer, bytes);
+        return -1; // error opening files
     }
-    SHA1_Final(hash, &context);
-    fclose(f);
-    return hash;
+    #define BYTES_TO_READ_AT_ONCE 512000
+    unsigned int bytes;
+    #if BYTES_TO_READ_AT_ONCE > UINT_MAX
+        #error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
+    #endif
+    unsigned char databuffer1[BYTES_TO_READ_AT_ONCE];
+    unsigned char databuffer2[BYTES_TO_READ_AT_ONCE];
+    while ((bytes = fread(databuffer1, 1, BYTES_TO_READ_AT_ONCE, file1)) != 0)
+    {
+        fread(databuffer2, 1, BYTES_TO_READ_AT_ONCE, file2);
+        if(strcmp(databuffer1, databuffer2) != 0)
+            return 0;
+    }
+    fclose(file1);
+    fclose(file2);
+    return 1;
 }
 
 void print_help(void)
