@@ -133,7 +133,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                         }
                         else if(file_equality_result == -1)
                         {
-                            printf("Error while comparing file %s in the directories %s, %s", element->d_name
+                            printf("Error while comparing file %s in the directories %s, %s\n", element->d_name
                                                                                             , directory_to_analyze_1
                                                                                             , directory_to_analyze_2);
                         }
@@ -234,6 +234,10 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
 }
 
 int are_files_equal(char* filename1, char* filename2){
+
+    if(strcmp(filename1, filename2) == 0)
+        return 1; // it's the same path, so it's the same file
+
     struct stat stat1, stat2;
 
     if ( stat(filename1, &stat1) != 0 || stat(filename2, &stat2) != 0)
@@ -249,17 +253,21 @@ int are_files_equal(char* filename1, char* filename2){
         return -1; // error opening files
     }
     #define BYTES_TO_READ_AT_ONCE 512000
-    unsigned int bytes;
-    #if BYTES_TO_READ_AT_ONCE > UINT_MAX
-        #error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
-    #endif
-    unsigned char databuffer1[BYTES_TO_READ_AT_ONCE];
-    unsigned char databuffer2[BYTES_TO_READ_AT_ONCE];
+    unsigned char databuffer1[BYTES_TO_READ_AT_ONCE] = "";
+    unsigned char databuffer2[BYTES_TO_READ_AT_ONCE] = "";
+    size_t bytes;
     while ((bytes = fread(databuffer1, 1, BYTES_TO_READ_AT_ONCE, file1)) != 0)
     {
-        fread(databuffer2, 1, BYTES_TO_READ_AT_ONCE, file2);
-        if(strcmp(databuffer1, databuffer2) != 0)
-            return 0;
+        if(fread(databuffer2, 1, bytes, file2) != bytes){
+            fclose(file1);
+            fclose(file2);
+            return -1; // error while reading the file(s)
+        }
+        if(memcmp(databuffer1, databuffer2, bytes) != 0){
+            fclose(file1);
+            fclose(file2);
+            return 0; // files are not the same
+        }
     }
     fclose(file1);
     fclose(file2);
