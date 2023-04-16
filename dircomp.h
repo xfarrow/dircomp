@@ -25,6 +25,7 @@ struct arguments{
     bool r; // recursive
     bool v; // verbose
     bool h; // help
+    bool f; // fast
 };
 
 struct arguments get_arguments(int, char**);

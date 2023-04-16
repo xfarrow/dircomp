@@ -37,13 +37,13 @@ int main(int argc, char *argv[])
 
 struct arguments get_arguments(int argc, char **argv)
 {
-    struct arguments provided_arguments = {"", "", false, false, false};
+    struct arguments provided_arguments = {"", "", false, false, false, false};
     if(argc == 1){
         provided_arguments.h = true;
         return provided_arguments;
     }
     char option;
-    while ((option = getopt(argc, argv, "rnsvh")) != -1)
+    while ((option = getopt(argc, argv, "rvhf")) != -1)
     {
         switch (option)
         {
@@ -55,6 +55,9 @@ struct arguments get_arguments(int argc, char **argv)
             break;
         case 'h':
             provided_arguments.h = true;
+            break;
+        case 'f':
+            provided_arguments.f = true;
             break;
         }
     }
@@ -79,9 +82,6 @@ struct arguments get_arguments(int argc, char **argv)
 
 bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyze_2, struct arguments *arguments)
 {
-    if (arguments->v == true)
-        printf("\nAnalyzing directories %s %s\n", directory_to_analyze_1, directory_to_analyze_2);
-
     bool is_directory_equal = true;
     int stat_result, file_equality_result;
     char* fullpath_file_helper;
@@ -104,13 +104,19 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 strcpy(fullpath_file_helper, directory_to_analyze_2);
                 strcat(fullpath_file_helper, "/");
                 strcat(fullpath_file_helper, element->d_name);
-                if (access(fullpath_file_helper, F_OK) == -1)
+                if ( access(fullpath_file_helper, F_OK) == -1 )
                 {
                     is_directory_equal = false;
-                    if (arguments->v == true)
+                    if ( arguments->v == true )
                         printf("File %s exists in %s but does not in %s\n"  , element->d_name
                                                                             , directory_to_analyze_1
                                                                             , directory_to_analyze_2);
+                    if( arguments->f == true ){
+                        free(fullpath_file_helper);
+                        free(directory_to_analyze_1);
+                        free(directory_to_analyze_2);
+                        return false;
+                    }
                 }
 
                 // Check if the files are the same
@@ -136,9 +142,18 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                         }
                         else if(file_equality_result == -1)
                         {
-                            printf("Error while comparing file %s in the directories %s, %s\n", element->d_name
+                            printf("ERROR while comparing file %s in the directories %s, %s\n", element->d_name
                                                                                             , directory_to_analyze_1
                                                                                             , directory_to_analyze_2);
+                        }
+                        
+                        if( arguments->f == true )
+                        {
+                            free( fullpath_file_helper );
+                            free( fullpath_file_helper2 );
+                            free( directory_to_analyze_1 );
+                            free( directory_to_analyze_2 );
+                            return false;
                         }
                     }
                 }
@@ -170,13 +185,19 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                         printf("Sub-directory %s exists in %s but does not in %s\n" , element->d_name
                                                                                     , directory_to_analyze_1
                                                                                     , directory_to_analyze_2);
+                    if( arguments->f == true )
+                    {
+                        free( fullpath_file_helper );
+                        free( directory_to_analyze_1 );
+                        free( directory_to_analyze_2 );
+                        return false;
+                    }
                 }
                 // Analyze recursively
                 else
                 { 
                     if (arguments->r == true)
                     {
-
                         subdirectory1 = malloc(sizeof(char) * (strlen(directory_to_analyze_1) + strlen(element->d_name) + 2));
                         strcpy(subdirectory1, directory_to_analyze_1);
                         strcat(subdirectory1, "/");
@@ -186,6 +207,11 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                         strcat(subdirectory2, "/");
                         strcat(subdirectory2, element->d_name);
                         is_directory_equal = analyze_directories(subdirectory1, subdirectory2, arguments) && is_directory_equal;
+
+                        // Interrupt recursion if -f option is set
+                        if(arguments->f == true && is_directory_equal == false){
+                            break;
+                        }
                     }
                 }
             }
@@ -213,6 +239,13 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                         printf("File %s exists in %s but does not in %s\n"  , element->d_name
                                                                             , directory_to_analyze_2
                                                                             , directory_to_analyze_1);
+                    if( arguments->f == true )
+                    {
+                        free( fullpath_file_helper );
+                        free( directory_to_analyze_1 );
+                        free( directory_to_analyze_2 );
+                        return false;
+                    }
                 }
                 free(fullpath_file_helper);
             }
@@ -233,6 +266,13 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                         printf("Sub-directory %s exists in %s but does not in %s\n" , element->d_name
                                                                                     , directory_to_analyze_2
                                                                                     , directory_to_analyze_1);
+                    if( arguments->f == true )
+                    {
+                        free( fullpath_file_helper );
+                        free( directory_to_analyze_1 );
+                        free( directory_to_analyze_2 );
+                        return false;
+                    }
                 }
                 free(fullpath_file_helper);
             }
@@ -287,8 +327,9 @@ int are_files_equal(char* filename1, char* filename2){
 
 void print_help(void)
 {
-    printf("usage: dircomp directory1 directory2 [-r] [-v] [-h]\n");
+    printf("usage: dircomp directory1 directory2 [-rvfh]\n");
     printf("  -r \t\t Recursive\n");
     printf("  -v \t\t Verbose\n");
+    printf("  -f \t\t Fast. Halt as soon as the directories are found to be not equal\n");
     printf("  -h \t\t Print this help and quit\n");
 }
