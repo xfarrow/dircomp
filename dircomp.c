@@ -99,7 +99,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
             // Is file
             if (element->d_type == DT_REG)
             {
-                // Check wether it exists in directory2
+                // Check whether it exists in directory2
                 fullpath_file_helper = malloc(sizeof(char) * (strlen(directory_to_analyze_2) + strlen(element->d_name) + 2) );
                 strcpy(fullpath_file_helper, directory_to_analyze_2);
                 strcat(fullpath_file_helper, "/");
@@ -147,14 +147,14 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                                                                                             , directory_to_analyze_1
                                                                                             , directory_to_analyze_2);
                         }
-                        
+
                         if( arguments->f == true )
                         {
                             free( fullpath_file_helper );
                             free( fullpath_file_helper2 );
                             free( directory_to_analyze_1 );
                             free( directory_to_analyze_2 );
-                            closedir(directory);
+                            closedir( directory );
                             return false;
                         }
                     }
@@ -170,7 +170,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 {
                     continue;
                 }
-                // Check wether a folder with the same name exists in directory2
+                // Check whether a folder with the same name exists in directory2
                 fullpath_file_helper = malloc(sizeof(char) * (strlen(directory_to_analyze_2) + strlen(element->d_name) + 2) );
                 strcpy(fullpath_file_helper, directory_to_analyze_2);
                 strcat(fullpath_file_helper, "/");
@@ -198,7 +198,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 }
                 // Analyze recursively
                 else
-                { 
+                {
                     if (arguments->r == true)
                     {
                         subdirectory1 = malloc(sizeof(char) * (strlen(directory_to_analyze_1) + strlen(element->d_name) + 2));
@@ -210,10 +210,13 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                         strcat(subdirectory2, "/");
                         strcat(subdirectory2, element->d_name);
                         is_directory_equal = analyze_directories(subdirectory1, subdirectory2, arguments) && is_directory_equal;
-
                         // Interrupt recursion if -f option is set
                         if(arguments->f == true && is_directory_equal == false){
-                            break;
+                            free( fullpath_file_helper );
+                            free( directory_to_analyze_1 );
+                            free( directory_to_analyze_2 );
+                            closedir( directory );
+                            return false;
                         }
                     }
                 }
@@ -260,6 +263,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 {
                     free( directory_to_analyze_1 );
                     free( directory_to_analyze_2 );
+                    closedir( directory );
                     return false;
                 }
             }
@@ -283,7 +287,7 @@ int are_files_equal(char* filename1, char* filename2){
 
     if(stat1.st_size != stat2.st_size)
         return 0; // files are not the same as they have a different dimension
-    
+
     FILE *file1 = fopen(filename1, "rb");
     FILE *file2 = fopen(filename2, "rb");
     if (file1 == NULL || file2 == NULL)
