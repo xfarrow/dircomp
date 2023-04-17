@@ -189,7 +189,6 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                                                                                     , directory_to_analyze_2);
                     if( arguments->f == true )
                     {
-                        free( fullpath_file_helper );
                         free( directory_to_analyze_1 );
                         free( directory_to_analyze_2 );
                         closedir(directory);
@@ -212,7 +211,6 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                         is_directory_equal = analyze_directories(subdirectory1, subdirectory2, arguments) && is_directory_equal;
                         // Interrupt recursion if -f option is set
                         if(arguments->f == true && is_directory_equal == false){
-                            free( fullpath_file_helper );
                             free( directory_to_analyze_1 );
                             free( directory_to_analyze_2 );
                             closedir( directory );
