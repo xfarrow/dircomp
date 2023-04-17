@@ -22,5 +22,6 @@ The options are as follows:
   -r             Recursive
   -v             Verbose
   -f             Fast. Halt as soon as the directories are found to be not equal             
+  -b             Byte-by-byte file comparison (default compares their hashes)
   -h             Print this help and quit
 ```
