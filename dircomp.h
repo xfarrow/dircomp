@@ -17,6 +17,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 #include <string.h>
 #include <limits.h>
 #include <sys/types.h>
+#include <openssl/sha.h>
 #include <sys/stat.h>
 
 struct arguments{
@@ -26,6 +27,7 @@ struct arguments{
     bool v; // verbose
     bool h; // help
     bool f; // fast
+    bool b; // byte-by-byte comparison
 };
 
 struct arguments get_arguments(int, char**);
@@ -33,7 +35,11 @@ struct arguments get_arguments(int, char**);
 // Reference: https://www.gnu.org/software/libc/manual/html_node/Directory-Entries.html
 bool analyze_directories(char*, char*, struct arguments*);
 
-int are_files_equal(char*, char*);
+int byte_by_byte_file_comparison(char*, char*);
+
+int hash_by_hash_file_comparison(char*, char*);
+
+unsigned char* sha1(char*);
 
 void print_help(void);
 

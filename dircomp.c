@@ -37,13 +37,13 @@ int main(int argc, char *argv[])
 
 struct arguments get_arguments(int argc, char **argv)
 {
-    struct arguments provided_arguments = {"", "", false, false, false, false};
+    struct arguments provided_arguments = {"", "", false, false, false, false, false};
     if(argc == 1){
         provided_arguments.h = true;
         return provided_arguments;
     }
     char option;
-    while ((option = getopt(argc, argv, "rvhf")) != -1)
+    while ((option = getopt(argc, argv, "rvhfb")) != -1)
     {
         switch (option)
         {
@@ -58,6 +58,9 @@ struct arguments get_arguments(int argc, char **argv)
             break;
         case 'f':
             provided_arguments.f = true;
+            break;
+        case 'b':
+            provided_arguments.b = true;
             break;
         }
     }
@@ -131,7 +134,10 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                     strcpy(fullpath_file_helper2, directory_to_analyze_2);
                     strcat(fullpath_file_helper2, "/");
                     strcat(fullpath_file_helper2, element->d_name);
-                    file_equality_result = are_files_equal(fullpath_file_helper, fullpath_file_helper2);
+                    if(arguments->b == true)
+                        file_equality_result = byte_by_byte_file_comparison(fullpath_file_helper, fullpath_file_helper2);
+                    else
+                        file_equality_result = hash_by_hash_file_comparison(fullpath_file_helper, fullpath_file_helper2);
                     if (file_equality_result != 1)
                     {
                         is_directory_equal = false;
@@ -273,7 +279,8 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
     return is_directory_equal;
 }
 
-int are_files_equal(char* filename1, char* filename2){
+int byte_by_byte_file_comparison(char* filename1, char* filename2)
+{
 
     if(strcmp(filename1, filename2) == 0)
         return 1; // it's the same path, so it's the same file
@@ -314,11 +321,52 @@ int are_files_equal(char* filename1, char* filename2){
     return 1;
 }
 
+int hash_by_hash_file_comparison(char* filename1, char* filename2)
+{
+    char* hash1 = sha1(filename1);
+    char* hash2 = sha1(filename2);
+    int ret = (strcmp(hash1, hash2) == 0);
+    free(hash1);
+    free(hash2);
+    return ret;
+}
+
+unsigned char* sha1(char *filename)
+{
+    FILE *f = fopen(filename, "rb");
+    if (f == NULL)
+    {
+        fprintf(stderr, "Couldn't open %s\n", filename);
+        exit(-1);
+    }
+
+    // For a matter of efficiency, we do not read
+    // the whole file at once. It'd be heavy on RAM.
+    // Instead, we read BYTES_TO_READ_AT_ONCE at time
+#define BYTES_TO_READ_AT_ONCE 512000    // 500KiB
+    unsigned int bytes;                 // how many bytes we have actually read from fread
+#if BYTES_TO_READ_AT_ONCE > UINT_MAX
+#error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
+#endif
+    SHA_CTX context;
+    unsigned char *hash = malloc(SHA_DIGEST_LENGTH * sizeof(unsigned char)); // result will be here
+    unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
+    SHA1_Init(&context);
+    while ((bytes = fread(databuffer, 1, BYTES_TO_READ_AT_ONCE, f)) != 0)
+    {
+        SHA1_Update(&context, databuffer, bytes);
+    }
+    SHA1_Final(hash, &context);
+    fclose(f);
+    return hash;
+}
+
 void print_help(void)
 {
-    printf("usage: dircomp directory1 directory2 [-rvfh]\n");
+    printf("usage: dircomp directory1 directory2 [-rvfbh]\n");
     printf("  -r \t\t Recursive\n");
     printf("  -v \t\t Verbose\n");
     printf("  -f \t\t Fast. Halt as soon as the directories are found to be not equal\n");
+    printf("  -b \t\t Byte-by-byte file comparison (default compares their hashes)\n");
     printf("  -h \t\t Print this help and quit\n");
 }
