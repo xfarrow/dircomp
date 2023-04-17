@@ -8,7 +8,7 @@ dircomp - A directory comparison tool
 ## Description
 dircomp is a program for evaluating wether two directories are equivalent.
 
-Two directories are equivalent if and only if these conditions apply:
+Two directories are considered equivalent if and only if these conditions apply:
 * They have the same number of files and folders;
 * For each file in a directory, there is the same file in the other. Two files are considered to be the same 
 if they have the same name, including extension, and same content.
