@@ -325,7 +325,7 @@ int hash_by_hash_file_comparison(char* filename1, char* filename2)
 {
     char* hash1 = sha1(filename1);
     char* hash2 = sha1(filename2);
-    int ret = (strcmp(hash1, hash2) == 0);
+    int ret = (memcmp(hash1, hash2, SHA_DIGEST_LENGTH) == 0);
     free(hash1);
     free(hash2);
     return ret;
