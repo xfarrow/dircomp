@@ -129,7 +129,8 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
             {
                 is_directory_equal = false;
                 if ( arguments->v == true )
-                    printf("File %s exists in %s but does not in %s\n"  , element->d_name                                                                            , directory_to_analyze_1
+                    printf("File %s exists in %s but does not in %s\n"  , element->d_name                                                                            
+                                                                        , directory_to_analyze_1
                                                                         , directory_to_analyze_2);
 
                 if( arguments->f == true ){
