@@ -41,6 +41,8 @@ int hash_by_hash_file_comparison(char*, char*);
 
 unsigned char* sha1(char*);
 
+char* combine_path(char*, char*);
+
 void print_help(void);
 
 #endif

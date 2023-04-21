@@ -103,10 +103,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
             if (element->d_type == DT_REG)
             {
                 // Check whether it exists in directory2
-                fullpath_file_helper = malloc(sizeof(char) * (strlen(directory_to_analyze_2) + strlen(element->d_name) + 2) );
-                strcpy(fullpath_file_helper, directory_to_analyze_2);
-                strcat(fullpath_file_helper, "/");
-                strcat(fullpath_file_helper, element->d_name);
+                fullpath_file_helper = combine_path(directory_to_analyze_2, element->d_name);
                 if ( access(fullpath_file_helper, F_OK) == -1 )
                 {
                     is_directory_equal = false;
@@ -126,18 +123,14 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 // Check if the files are the same
                 else
                 {
-                    fullpath_file_helper = malloc(sizeof(char) * (strlen(directory_to_analyze_1) + strlen(element->d_name) + 2) );
-                    strcpy(fullpath_file_helper, directory_to_analyze_1);
-                    strcat(fullpath_file_helper, "/");
-                    strcat(fullpath_file_helper, element->d_name);
-                    fullpath_file_helper2 = malloc(sizeof(char) * (strlen(directory_to_analyze_2) + strlen(element->d_name) + 2) );
-                    strcpy(fullpath_file_helper2, directory_to_analyze_2);
-                    strcat(fullpath_file_helper2, "/");
-                    strcat(fullpath_file_helper2, element->d_name);
+                    fullpath_file_helper = combine_path(directory_to_analyze_1, element->d_name);
+                    fullpath_file_helper2 = combine_path(directory_to_analyze_2, element->d_name);
+
                     if(arguments->b == true)
                         file_equality_result = byte_by_byte_file_comparison(fullpath_file_helper, fullpath_file_helper2);
                     else
                         file_equality_result = hash_by_hash_file_comparison(fullpath_file_helper, fullpath_file_helper2);
+
                     if (file_equality_result != 1)
                     {
                         is_directory_equal = false;
@@ -177,10 +170,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                     continue;
                 }
                 // Check whether a folder with the same name exists in directory2
-                fullpath_file_helper = malloc(sizeof(char) * (strlen(directory_to_analyze_2) + strlen(element->d_name) + 2) );
-                strcpy(fullpath_file_helper, directory_to_analyze_2);
-                strcat(fullpath_file_helper, "/");
-                strcat(fullpath_file_helper, element->d_name);
+                fullpath_file_helper = combine_path(directory_to_analyze_2, element->d_name);
                 // Allocate heap memory in order to be able to free it before a potential recursive call starts
                 struct stat *dummy_structure = malloc(sizeof(struct stat));
                 stat_result = stat(fullpath_file_helper, dummy_structure);
@@ -206,14 +196,9 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 {
                     if (arguments->r == true)
                     {
-                        subdirectory1 = malloc(sizeof(char) * (strlen(directory_to_analyze_1) + strlen(element->d_name) + 2));
-                        strcpy(subdirectory1, directory_to_analyze_1);
-                        strcat(subdirectory1, "/");
-                        strcat(subdirectory1, element->d_name);
-                        subdirectory2 = malloc(sizeof(char) * (strlen(directory_to_analyze_2) + strlen(element->d_name) + 2));
-                        strcpy(subdirectory2, directory_to_analyze_2);
-                        strcat(subdirectory2, "/");
-                        strcat(subdirectory2, element->d_name);
+                        subdirectory1 = combine_path(directory_to_analyze_1, element->d_name);
+                        subdirectory2 = combine_path(directory_to_analyze_2, element->d_name);
+
                         is_directory_equal = analyze_directories(subdirectory1, subdirectory2, arguments) && is_directory_equal;
                         // Interrupt recursion if -f option is set
                         if(arguments->f == true && is_directory_equal == false){
@@ -236,10 +221,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
         {
             if (element->d_type == DT_REG || element->d_type == DT_DIR)
             {
-                fullpath_file_helper = malloc(sizeof(char) * (strlen(directory_to_analyze_1) + strlen(element->d_name) + 2) );
-                strcpy(fullpath_file_helper, directory_to_analyze_1);
-                strcat(fullpath_file_helper, "/");
-                strcat(fullpath_file_helper, element->d_name);
+                fullpath_file_helper = combine_path(directory_to_analyze_1, element->d_name);
                 if(element->d_type == DT_REG){
                     if (access(fullpath_file_helper, F_OK) == -1)
                     {
@@ -359,6 +341,14 @@ unsigned char* sha1(char *filename)
     SHA1_Final(hash, &context);
     fclose(f);
     return hash;
+}
+
+char* combine_path(char* path1, char* path2){
+    char* path = malloc(sizeof(char) * (strlen(path1) + strlen(path2) + 2) );
+    strcpy(path, path1);
+    strcat(path, "/");
+    strcat(path, path2);
+    return path;
 }
 
 void print_help(void)
