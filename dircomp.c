@@ -36,8 +36,7 @@ int main(int argc, char *argv[])
     {
         printf("Directories are not equal\n");
     }
-    free(arguments.directory1);
-    free(arguments.directory2);
+
     return 0;
 }
 
