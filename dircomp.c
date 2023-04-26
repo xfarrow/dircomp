@@ -74,12 +74,12 @@ struct arguments get_arguments(int argc, char **argv)
     // Get directories
     if ((argc - optind) < 2)
     {
-        fprintf(stderr, "Not enough directories.\n");
+        printf("Not enough directories.\n");
         exit(-1);
     }
     else if ((argc - optind) > 2)
     {
-        fprintf(stderr, "Too many directories.\n");
+        printf("Too many directories.\n");
         exit(-1);
     }
     provided_arguments.directory1 = malloc((strlen(argv[optind]) * sizeof(char)) + 1);
@@ -98,10 +98,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
 {
     bool is_directory_equal = true;
     int stat_result, file_equality_result;
-    char* fullpath_file_helper;
-    char* fullpath_file_helper2;
-    char* subdirectory1;
-    char* subdirectory2;
+    char *fullpath_helper, *fullpath_helper2;
     struct dirent *element;
     DIR *directory1, *directory2;
 
@@ -127,41 +124,32 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
         if (element->d_type == DT_REG)
         {
             // Check whether it exists in directory2
-            fullpath_file_helper = combine_path(directory_to_analyze_2, element->d_name);
-            if (access(fullpath_file_helper, F_OK) == -1)
+            fullpath_helper = combine_path(directory_to_analyze_2, element->d_name);
+            if (access(fullpath_helper, F_OK) == -1)
             {
                 is_directory_equal = false;
-                if ( arguments->v == true )
+                if (arguments->v)
                     printf("File %s exists in %s but does not in %s\n"  , element->d_name                                                                            
                                                                         , directory_to_analyze_1
                                                                         , directory_to_analyze_2);
-
-                if( arguments->f == true ){
-                    free(fullpath_file_helper);
-                    free(directory_to_analyze_1);
-                    free(directory_to_analyze_2);
-                    closedir(directory1);
-                    return false;
-                }
+                free(fullpath_helper);
             }
 
             // If the file exists, check if they are the same
             else
             {
-                fullpath_file_helper = combine_path(directory_to_analyze_1, element->d_name);
-                fullpath_file_helper2 = combine_path(directory_to_analyze_2, element->d_name);
+                fullpath_helper2 = combine_path(directory_to_analyze_1, element->d_name);
 
-                if(arguments->b == true)
-                    file_equality_result = byte_by_byte_file_comparison(fullpath_file_helper, fullpath_file_helper2);
+                if(arguments->b)
+                    file_equality_result = byte_by_byte_file_comparison(fullpath_helper, fullpath_helper2);
                 else
-                    file_equality_result = hash_by_hash_file_comparison(fullpath_file_helper, fullpath_file_helper2);
+                    file_equality_result = hash_by_hash_file_comparison(fullpath_helper, fullpath_helper2);
 
-                free( fullpath_file_helper );
-                free( fullpath_file_helper2 );
+                
                 if (file_equality_result != 1)
                 {
                     is_directory_equal = false;
-                    if(file_equality_result == 0 && arguments->v == true)
+                    if(file_equality_result == 0 && arguments->v)
                     {
                         printf("File %s in %s is different in %s\n" , element->d_name
                                                                     , directory_to_analyze_1
@@ -173,14 +161,9 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                                                                                                         , directory_to_analyze_1
                                                                                                         , directory_to_analyze_2);
                     }
-                    if( arguments->f == true )
-                    {
-                        free( directory_to_analyze_1 );
-                        free( directory_to_analyze_2 );
-                        closedir( directory1 );
-                        return false;
-                    }
                 }
+                free( fullpath_helper );
+                free( fullpath_helper2 );
             }
         }
 
@@ -192,44 +175,36 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 continue;
             }
             // Check whether a folder with the same name exists in directory2
-            fullpath_file_helper = combine_path(directory_to_analyze_2, element->d_name);
+            fullpath_helper = combine_path(directory_to_analyze_2, element->d_name);
             // Allocate heap memory in order to be able to free it before a potential recursive call starts
             struct stat *dummy_structure = malloc(sizeof(struct stat));
-            stat_result = stat(fullpath_file_helper, dummy_structure);
+            stat_result = stat(fullpath_helper, dummy_structure);
             free(dummy_structure);
-            free(fullpath_file_helper);
+            free(fullpath_helper);
             if (stat_result == -1) // directory does not exist
             {
                 is_directory_equal = false;
-                if (arguments->v == true)
+                if (arguments->v)
                     printf("Sub-directory %s exists in %s but does not in %s\n" , element->d_name
                                                                                 , directory_to_analyze_1
                                                                                 , directory_to_analyze_2);
-                if( arguments->f == true )
-                {
-                    free( directory_to_analyze_1 );
-                    free( directory_to_analyze_2 );
-                    closedir(directory1);
-                    return false;
-                }
             }
             else
             {
                 // Analyze recursively
-                if (arguments->r == true)
+                if (arguments->r)
                 {
-                    subdirectory1 = combine_path(directory_to_analyze_1, element->d_name);
-                    subdirectory2 = combine_path(directory_to_analyze_2, element->d_name);
-                    is_directory_equal = analyze_directories(subdirectory1, subdirectory2, arguments) && is_directory_equal;
-                    // Interrupt recursion if -f option is set
-                    if(arguments->f == true && is_directory_equal == false){
-                        free( directory_to_analyze_1 );
-                        free( directory_to_analyze_2 );
-                        closedir( directory1 );
-                        return false;
-                    }
+                    fullpath_helper = combine_path(directory_to_analyze_1, element->d_name);
+                    fullpath_helper2 = combine_path(directory_to_analyze_2, element->d_name);
+                    is_directory_equal = analyze_directories(fullpath_helper, fullpath_helper2, arguments) && is_directory_equal;
                 }
             }
+        }
+        if(arguments->f && !is_directory_equal){
+            free(directory_to_analyze_1);
+            free(directory_to_analyze_2);
+            closedir(directory1);
+            return false;
         }
     }
     closedir(directory1);
@@ -238,12 +213,12 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
     {
         if (element->d_type == DT_REG || element->d_type == DT_DIR)
         {
-            fullpath_file_helper = combine_path(directory_to_analyze_1, element->d_name);
+            fullpath_helper = combine_path(directory_to_analyze_1, element->d_name);
             if(element->d_type == DT_REG){
-                if (access(fullpath_file_helper, F_OK) == -1)
+                if (access(fullpath_helper, F_OK) == -1)
                 {
                     is_directory_equal = false;
-                    if (arguments->v == true)
+                    if (arguments->v)
                     {
                         printf("File %s exists in %s but does not in %s\n"  , element->d_name
                                                                             , directory_to_analyze_2
@@ -254,10 +229,10 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
             else if(element->d_type == DT_DIR)
             {
                 struct stat dummy_structure; // no need to be malloc-ed, as it'll be automatically free-d as the call ends
-                if (stat(fullpath_file_helper, &dummy_structure) == -1)
+                if (stat(fullpath_helper, &dummy_structure) == -1)
                 {
                     is_directory_equal = false;
-                    if (arguments->v == true)
+                    if (arguments->v)
                     {
                         printf("Sub-directory %s exists in %s but does not in %s\n" , element->d_name
                                                                                     , directory_to_analyze_2
@@ -265,14 +240,14 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                     }
                 }
             }
-            free(fullpath_file_helper);
-            if( arguments->f == true && is_directory_equal == false)
-            {
-                free( directory_to_analyze_1 );
-                free( directory_to_analyze_2 );
-                closedir( directory2 );
-                return false;
-            }
+            free(fullpath_helper);
+        }
+        if(arguments->f && !is_directory_equal)
+        {
+            free(directory_to_analyze_1);
+            free(directory_to_analyze_2);
+            closedir(directory2);
+            return false;
         }
     }
     closedir(directory2);
