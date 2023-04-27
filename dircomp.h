@@ -19,6 +19,7 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <sys/stat.h>
 
 struct arguments{
