@@ -397,11 +397,6 @@ unsigned char* sha1(char *filename){
         return NULL;
     }
     EVP_MD_CTX_free(mdctx);
-    // print the result in hexadecimal format
-    for (i = 0; i < digest_len; i++) {
-        printf("%02x", hash[i]);
-    }
-
     fclose(f);
     return hash;
 }
