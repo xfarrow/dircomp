@@ -90,7 +90,7 @@ struct arguments get_arguments(int argc, char **argv)
 }
 
 /// @brief Checks if two directories are equivalent.
-/// @param directory_to_analyze_1 Name of the first directory. Will be free-d before the call terminates 
+/// @param directory_to_analyze_1 Name of the first directory. Will be free-d before the call terminates
 /// @param directory_to_analyze_2 Name of the second directory. Will be free-d before the call terminates
 /// @param arguments Arguments passed to dircomp
 /// @return true if the directories are equivalent, false otherwise
@@ -117,7 +117,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
         free(directory_to_analyze_2);
         return false;
     }
-    
+
     while ((element = readdir(directory1)) != NULL)
     {
         // Is file
@@ -129,7 +129,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
             {
                 is_directory_equal = false;
                 if (arguments->v)
-                    printf("File %s exists in %s but does not in %s\n"  , element->d_name                                                                            
+                    printf("File %s exists in %s but does not in %s\n"  , element->d_name
                                                                         , directory_to_analyze_1
                                                                         , directory_to_analyze_2);
                 free(fullpath_helper);
@@ -145,7 +145,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                 else
                     file_equality_result = hash_by_hash_file_comparison(fullpath_helper, fullpath_helper2);
 
-                
+
                 if (file_equality_result != 1)
                 {
                     is_directory_equal = false;
@@ -251,10 +251,10 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
         }
     }
     closedir(directory2);
-    
+
     free(directory_to_analyze_1);
     free(directory_to_analyze_2);
-    
+
     return is_directory_equal;
 }
 
@@ -305,8 +305,8 @@ int byte_by_byte_file_comparison(char* filename1, char* filename2)
 }
 
 /// @brief Checks if two files contain the same data (by comparing the resulting SHA-1 hash)
-/// @param filename1 
-/// @param filename2 
+/// @param filename1
+/// @param filename2
 /// @return Returns 1 if the files are the same, 0 otherwise, -1 if an error occurred
 int hash_by_hash_file_comparison(char* filename1, char* filename2)
 {
@@ -355,9 +355,57 @@ unsigned char* sha1(char *filename)
     return hash;
 }
 
+unsigned char* sha1_openssl3(char *filename){
+    EVP_MD_CTX *mdctx; // envelope context
+    const EVP_MD *md; // envelope mode (SHA1)
+    unsigned char *hash = malloc(EVP_MAX_MD_SIZE * sizeof(unsigned char)); // result will be here
+    unsigned int digest_len, i;
+
+    FILE *f = fopen(filename, "rb");
+    if (f == NULL)
+    {
+        fprintf(stderr, "Couldn't open %s\n", filename);
+        return NULL;
+    }
+
+    mdctx = EVP_MD_CTX_new();
+    if (mdctx == NULL) {
+        return NULL;
+    }
+    md = EVP_sha1();
+    if (!EVP_DigestInit_ex(mdctx, md, NULL)) {
+        return NULL;
+    }
+
+    #define BYTES_TO_READ_AT_ONCE 512000    // 500KiB
+    unsigned int bytes;                 // how many bytes we have actually read from fread
+    #if BYTES_TO_READ_AT_ONCE > UINT_MAX
+    #error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
+    #endif
+    unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
+    while ((bytes = fread(databuffer, 1, BYTES_TO_READ_AT_ONCE, f)) != 0)
+    {
+        if (!EVP_DigestUpdate(mdctx, databuffer, bytes)) {
+            return NULL;
+        }
+    }
+
+    if (!EVP_DigestFinal_ex(mdctx, hash, &digest_len)) {
+        return NULL;
+    }
+    EVP_MD_CTX_free(mdctx);
+    // print the result in hexadecimal format
+    for (i = 0; i < digest_len; i++) {
+        printf("%02x", hash[i]);
+    }
+
+    fclose(f);
+    return hash;
+}
+
 /// @brief Combines two paths
-/// @param path1 
-/// @param path2 
+/// @param path1
+/// @param path2
 /// @return Pointer to the new path
 char* combine_path(char* path1, char* path2){
     char* path = malloc(sizeof(char) * (strlen(path1) + strlen(path2) + 2) );
@@ -368,7 +416,7 @@ char* combine_path(char* path1, char* path2){
 }
 
 /// @brief Output of the command 'dircomp -h'
-/// @param  
+/// @param
 void print_help(void)
 {
     printf("usage: dircomp directory1 directory2 [-rvfbh]\n");
