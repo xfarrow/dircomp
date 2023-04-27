@@ -41,7 +41,9 @@ int byte_by_byte_file_comparison(char*, char*);
 
 int hash_by_hash_file_comparison(char*, char*);
 
-unsigned char* sha1(char*);
+unsigned char* sha1(char *filename)
+
+unsigned char* sha1_legacy(char*);
 
 char* combine_path(char*, char*);
 

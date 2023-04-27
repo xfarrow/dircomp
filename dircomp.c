@@ -310,8 +310,8 @@ int byte_by_byte_file_comparison(char* filename1, char* filename2)
 /// @return Returns 1 if the files are the same, 0 otherwise, -1 if an error occurred
 int hash_by_hash_file_comparison(char* filename1, char* filename2)
 {
-    char* hash1 = sha1(filename1);
-    char* hash2 = sha1(filename2);
+    unsigned char* hash1 = sha1(filename1);
+    unsigned char* hash2 = sha1(filename2);
     if(hash1 == NULL || hash2 == NULL)
     {
         return -1;
@@ -322,10 +322,10 @@ int hash_by_hash_file_comparison(char* filename1, char* filename2)
     return ret;
 }
 
-/// @brief Generates the SHA-1 hash of a file
+/// @brief Generates the SHA-1 hash of a file. Deprecated since OpenSSL >= 3.0
 /// @param filename Name of the file
 /// @return Pointer to the digest
-unsigned char* sha1(char *filename)
+unsigned char* sha1_legacy(char *filename)
 {
     FILE *f = fopen(filename, "rb");
     if (f == NULL)
@@ -355,7 +355,10 @@ unsigned char* sha1(char *filename)
     return hash;
 }
 
-unsigned char* sha1_openssl3(char *filename){
+/// @brief Generates the SHA-1 hash of a file.
+/// @param filename Name of the file
+/// @return Pointer to the digest
+unsigned char* sha1(char *filename){
     EVP_MD_CTX *mdctx; // envelope context
     const EVP_MD *md; // envelope mode (SHA1)
     unsigned char *hash = malloc(EVP_MAX_MD_SIZE * sizeof(unsigned char)); // result will be here
