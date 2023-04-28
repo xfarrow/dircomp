@@ -34,7 +34,7 @@ struct arguments{
     bool v; // verbose
     bool h; // help
     bool f; // fast
-    bool b; // byte-by-byte comparison
+    bool d; // comparison by digest
 };
 
 struct arguments get_arguments(int, char**);

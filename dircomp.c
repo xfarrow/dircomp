@@ -49,7 +49,7 @@ struct arguments get_arguments(int argc, char **argv)
         return provided_arguments;
     }
     char option;
-    while ((option = getopt(argc, argv, "rvhfb")) != -1)
+    while ((option = getopt(argc, argv, "rvhfd")) != -1)
     {
         switch (option)
         {
@@ -65,8 +65,8 @@ struct arguments get_arguments(int argc, char **argv)
         case 'f':
             provided_arguments.f = true;
             break;
-        case 'b':
-            provided_arguments.b = true;
+        case 'd':
+            provided_arguments.d = true;
             break;
         }
     }
@@ -140,10 +140,10 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
             {
                 fullpath_helper2 = combine_path(directory_to_analyze_1, element->d_name);
 
-                if(arguments->b)
-                    file_equality_result = byte_by_byte_file_comparison(fullpath_helper, fullpath_helper2);
-                else
+                if(arguments->d)
                     file_equality_result = hash_by_hash_file_comparison(fullpath_helper, fullpath_helper2);
+                else
+                    file_equality_result = byte_by_byte_file_comparison(fullpath_helper, fullpath_helper2);
 
 
                 if (file_equality_result != 1)
@@ -358,7 +358,7 @@ unsigned char* sha1(char *filename)
     EVP_MD_CTX *mdctx; // envelope context
     const EVP_MD *md; // envelope mode (SHA1)
     unsigned char *hash = malloc(EVP_MAX_MD_SIZE * sizeof(unsigned char)); // result will be here
-    unsigned int digest_len, i;
+    unsigned int digest_len;
     size_t bytes; // how many bytes we have actually read from fread
     unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
 
@@ -413,6 +413,6 @@ void print_help(void)
     printf("  -r \t\t Recursive\n");
     printf("  -v \t\t Verbose\n");
     printf("  -f \t\t Fast. Halt as soon as the directories are found to be not equal\n");
-    printf("  -b \t\t Byte-by-byte file comparison (default compares their hashes)\n");
+    printf("  -d \t\t Comparison by digest\n");
     printf("  -h \t\t Print this help and quit\n");
 }
