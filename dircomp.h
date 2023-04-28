@@ -22,6 +22,11 @@
 #include <openssl/evp.h>
 #include <sys/stat.h>
 
+#define BYTES_TO_READ_AT_ONCE 512000    // 500KiB
+#if BYTES_TO_READ_AT_ONCE > SIZE_MAX
+#error Compile-time error: The specified value of BYTES_TO_READ_AT_ONCE is too large for this system.
+#endif
+
 struct arguments{
     char* directory1;
     char* directory2;

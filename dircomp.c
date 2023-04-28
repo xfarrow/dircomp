@@ -264,7 +264,6 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
 /// @return Returns 1 if the files are the same, 0 otherwise, -1 if an error occurred
 int byte_by_byte_file_comparison(char* filename1, char* filename2)
 {
-
     if(strcmp(filename1, filename2) == 0)
         return 1; // it's the same path, so it's the same file
 
@@ -282,7 +281,7 @@ int byte_by_byte_file_comparison(char* filename1, char* filename2)
     {
         return -1; // error opening files
     }
-    #define BYTES_TO_READ_AT_ONCE 512000
+
     unsigned char databuffer1[BYTES_TO_READ_AT_ONCE] = "";
     unsigned char databuffer2[BYTES_TO_READ_AT_ONCE] = "";
     size_t bytes;
@@ -337,11 +336,7 @@ unsigned char* sha1_legacy(char *filename)
     // For a matter of efficiency, we do not read
     // the whole file at once. It'd be heavy on RAM.
     // Instead, we read BYTES_TO_READ_AT_ONCE at time
-#define BYTES_TO_READ_AT_ONCE 512000    // 500KiB
-    unsigned int bytes;                 // how many bytes we have actually read from fread
-#if BYTES_TO_READ_AT_ONCE > UINT_MAX
-#error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
-#endif
+    size_t bytes; // how many bytes we have actually read from fread
     SHA_CTX context;
     unsigned char *hash = malloc(SHA_DIGEST_LENGTH * sizeof(unsigned char)); // result will be here
     unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
@@ -358,11 +353,14 @@ unsigned char* sha1_legacy(char *filename)
 /// @brief Generates the SHA-1 hash of a file.
 /// @param filename Name of the file
 /// @return Pointer to the digest
-unsigned char* sha1(char *filename){
+unsigned char* sha1(char *filename)
+{
     EVP_MD_CTX *mdctx; // envelope context
     const EVP_MD *md; // envelope mode (SHA1)
     unsigned char *hash = malloc(EVP_MAX_MD_SIZE * sizeof(unsigned char)); // result will be here
     unsigned int digest_len, i;
+    size_t bytes; // how many bytes we have actually read from fread
+    unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
 
     FILE *f = fopen(filename, "rb");
     if (f == NULL)
@@ -380,12 +378,6 @@ unsigned char* sha1(char *filename){
         return NULL;
     }
 
-    #define BYTES_TO_READ_AT_ONCE 512000    // 500KiB
-    unsigned int bytes;                 // how many bytes we have actually read from fread
-    #if BYTES_TO_READ_AT_ONCE > UINT_MAX
-    #error Trying to read more bytes than what is possible to handle. Recompile using unsigned long or reduce BYTES_TO_READ_AT_ONCE
-    #endif
-    unsigned char databuffer[BYTES_TO_READ_AT_ONCE];
     while ((bytes = fread(databuffer, 1, BYTES_TO_READ_AT_ONCE, f)) != 0)
     {
         if (!EVP_DigestUpdate(mdctx, databuffer, bytes)) {
