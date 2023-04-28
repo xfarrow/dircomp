@@ -151,9 +151,9 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
                     is_directory_equal = false;
                     if(file_equality_result == 0 && arguments->v)
                     {
-                        printf("File %s in %s is different in %s\n" , element->d_name
-                                                                    , directory_to_analyze_1
-                                                                    , directory_to_analyze_2);
+                        printf("The files %s in %s and %s are different\n"  , element->d_name
+                                                                            , directory_to_analyze_1
+                                                                            , directory_to_analyze_2);
                     }
                     else if(file_equality_result == -1)
                     {
