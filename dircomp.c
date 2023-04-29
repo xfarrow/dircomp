@@ -204,6 +204,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
             free(directory_to_analyze_1);
             free(directory_to_analyze_2);
             closedir(directory1);
+            closedir(directory2);
             return false;
         }
     }
