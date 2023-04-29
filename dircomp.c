@@ -102,10 +102,6 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
     struct dirent *element;
     DIR *directory1, *directory2;
 
-    if(strcmp(directory_to_analyze_1, directory_to_analyze_2) == 0){
-        return true;
-    }
-
     directory1 = opendir(directory_to_analyze_1);
     directory2 = opendir(directory_to_analyze_2);
 
@@ -116,6 +112,12 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
         free(directory_to_analyze_1);
         free(directory_to_analyze_2);
         return false;
+    }
+
+    if(strcmp(directory_to_analyze_1, directory_to_analyze_2) == 0){
+        free(directory_to_analyze_1);
+        free(directory_to_analyze_2);
+        return true;
     }
 
     while ((element = readdir(directory1)) != NULL)
