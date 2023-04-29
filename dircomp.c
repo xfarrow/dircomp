@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    char* directory_to_analyze1 = malloc(strlen(arguments.directory1) * sizeof(char));
-    char* directory_to_analyze2 = malloc(strlen(arguments.directory2) * sizeof(char));
+    char* directory_to_analyze1 = malloc(strlen(arguments.directory1) * sizeof(char) + 1);
+    char* directory_to_analyze2 = malloc(strlen(arguments.directory2) * sizeof(char) + 1);
     strcpy(directory_to_analyze1, arguments.directory1);
     strcpy(directory_to_analyze2, arguments.directory2);
     free(arguments.directory1);
