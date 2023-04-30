@@ -109,6 +109,7 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
     {
         printf("Couldn't open %s, %s, or both. The directories will be considered to be not equal.\n",
                 directory_to_analyze_1, directory_to_analyze_2);
+        perror("Detailed error");
         free(directory_to_analyze_1);
         free(directory_to_analyze_2);
         return false;
@@ -117,6 +118,8 @@ bool analyze_directories(char* directory_to_analyze_1, char* directory_to_analyz
     if(strcmp(directory_to_analyze_1, directory_to_analyze_2) == 0){
         free(directory_to_analyze_1);
         free(directory_to_analyze_2);
+        closedir(directory1);
+        closedir(directory2);
         return true;
     }
 
