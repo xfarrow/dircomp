@@ -3,7 +3,7 @@
 dircomp - A directory comparison tool
 
 ## Synopsis
-`dircomp directory1 directory2 [-rvfbh]`
+`dircomp directory1 directory2 [-rvfdh]`
 
 ## Description
 dircomp is a program for evaluating whether two directories are equivalent.
