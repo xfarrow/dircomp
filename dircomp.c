@@ -415,7 +415,7 @@ char* combine_path(char* path1, char* path2){
 /// @param
 void print_help(void)
 {
-    printf("usage: dircomp directory1 directory2 [-rvfbh]\n");
+    printf("usage: dircomp directory1 directory2 [-rvfdh]\n");
     printf("  -r \t\t Recursive\n");
     printf("  -v \t\t Verbose\n");
     printf("  -f \t\t Fast. Halt as soon as the directories are found to be not equal\n");
