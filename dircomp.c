@@ -13,11 +13,6 @@
 int main(int argc, char *argv[])
 {
     struct arguments arguments = get_arguments(argc, argv);
-    if (arguments.h == true)
-    {
-        print_help();
-        return 0;
-    }
 
     char* directory_to_analyze1 = malloc(strlen(arguments.directory1) * sizeof(char) + 1);
     char* directory_to_analyze2 = malloc(strlen(arguments.directory2) * sizeof(char) + 1);
@@ -25,8 +20,6 @@ int main(int argc, char *argv[])
     strcpy(directory_to_analyze2, arguments.directory2);
     free(arguments.directory1);
     free(arguments.directory2);
-    arguments.directory1 = NULL;
-    arguments.directory2 = NULL;
 
     if (analyze_directories(directory_to_analyze1, directory_to_analyze2, &arguments))
     {
@@ -44,10 +37,7 @@ int main(int argc, char *argv[])
 struct arguments get_arguments(int argc, char **argv)
 {
     struct arguments provided_arguments = {"", "", false, false, false, false, false};
-    if(argc == 1){
-        provided_arguments.h = true;
-        return provided_arguments;
-    }
+
     char option;
     while ((option = getopt(argc, argv, "rvhfd")) != -1)
     {
@@ -69,6 +59,11 @@ struct arguments get_arguments(int argc, char **argv)
             provided_arguments.d = true;
             break;
         }
+    }
+
+    if(provided_arguments.h || argc == 1){
+        print_help();
+        exit(0);
     }
 
     // Get directories
