@@ -25,3 +25,6 @@ The options are as follows:
   -d             Comparison by digest
   -h             Print this help and quit
 ```
+
+## Correctness
+You can have a look at the code and at its [mathematical proof](https://github.com/xfarrow/dircomp/wiki/Mathematical-correctness-of-dircomp) to validate its correctness.
